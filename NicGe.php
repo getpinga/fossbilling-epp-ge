@@ -272,7 +272,7 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
             $return = array(
                 'error' => $e->getMessage()
             );
-			throw new exception($e->getMessage());
+            throw new exception($e->getMessage());
         }
 
         if (!empty($s)) {
@@ -496,6 +496,8 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
             $to[] = htmlspecialchars($client->getCompany());
             $from[] = '/{{ street1 }}/';
             $to[] = htmlspecialchars($client->getAddress1());
+            $from[] = '/{{ uin }}/';
+            $to[] = htmlspecialchars($client->getCompanyNumber());
             $from[] = '/{{ city }}/';
             $to[] = htmlspecialchars($client->getCity());
             $from[] = '/{{ state }}/';
@@ -544,7 +546,12 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
             </contact:authInfo>
           </contact:create>
         </create>
-        <clTRID>{{ clTRID }}</clTRID>
+      <extension>
+         <contact-ext:create xmlns:contact-ext="http://nic.ge/epp/xml/schema/contact-ext-1.0" xsi:schemaLocation="http://nic.ge/epp/xml/schema/contact-ext-1.0 contact-ext-1.0.xsd">
+            <contact-ext:idNumber>{{ uin }}</contact-ext:idNumber>
+         </contact-ext:create>
+      </extension>
+      <clTRID>{{ clTRID }}</clTRID>
       </command>
     </epp>');
             $r = $this->write($xml, __FUNCTION__);
@@ -606,6 +613,53 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
               </command>
             </epp>');
             $r = $this->write($xml, __FUNCTION__);
+            
+            if ($client->getCompany() === "" || $client->getCompany() === null) {
+                $from = $to = array();
+                $from[] = '/{{ name }}/';
+                $to[] = htmlspecialchars($domain->getName());
+                $from[] = '/{{ clTRID }}/';
+                $clTRID = str_replace('.', '', round(microtime(1), 3));
+                $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-update-' . $clTRID);
+                $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8"?>
+    <epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
+       <command>
+          <update>
+             <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
+                <domain:name>{{ name }}</domain:name>
+                <domain:add>
+                   <domain:status s="hiddenInWhoIs" lang="en" />
+                </domain:add>
+             </domain:update>
+          </update>
+          <clTRID>{{ clTRID }}</clTRID>
+       </command>
+    </epp>');
+                $r = $this->write($xml, __FUNCTION__);
+            } else {
+                $from = $to = array();
+                $from[] = '/{{ name }}/';
+                $to[] = htmlspecialchars($domain->getName());
+                $from[] = '/{{ clTRID }}/';
+                $clTRID = str_replace('.', '', round(microtime(1), 3));
+                $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-update-' . $clTRID);
+                $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8"?>
+    <epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
+       <command>
+          <update>
+             <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
+                <domain:name>{{ name }}</domain:name>
+                <domain:rem>
+                   <domain:status s="hiddenInWhoIs" lang="en" />
+                </domain:rem>
+             </domain:update>
+          </update>
+          <clTRID>{{ clTRID }}</clTRID>
+       </command>
+    </epp>');
+                $r = $this->write($xml, __FUNCTION__);
+            }
+
         }
 
         catch(exception $e) {
@@ -735,8 +789,8 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
             $to[] = htmlspecialchars($client->getCompany());
             $from[] = '/{{ street1 }}/';
             $to[] = htmlspecialchars($client->getAddress1());
-            $from[] = '/{{ street2 }}/';
-            $to[] = htmlspecialchars($client->getAddress2());
+            $from[] = '/{{ uin }}/';
+            $to[] = htmlspecialchars($client->getCompanyNumber());
             $from[] = '/{{ city }}/';
             $to[] = htmlspecialchars($client->getCity());
             $from[] = '/{{ state }}/';
@@ -766,7 +820,7 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
               <contact:org>{{ org }}</contact:org>
               <contact:addr>
                 <contact:street>{{ street1 }}</contact:street>
-                <contact:street>{{ street2 }}</contact:street>
+                <contact:street></contact:street>
                 <contact:street></contact:street>
                 <contact:city>{{ city }}</contact:city>
                 <contact:sp>{{ state }}</contact:sp>
@@ -784,13 +838,119 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
     </command>
 </epp>');
             $r = $this->write($xml, __FUNCTION__);
+            
+            if ($client->getCompany() === "" || $client->getCompany() === null) {
+                $from = $to = array();
+                $from[] = '/{{ name }}/';
+                $to[] = htmlspecialchars($domain->getName());
+                $from[] = '/{{ clTRID }}/';
+                $clTRID = str_replace('.', '', round(microtime(1), 3));
+                $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-info-' . $clTRID);
+                $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        <epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
+          <command>
+            <info>
+              <domain:info
+               xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
+               xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
+                <domain:name hosts="all">{{ name }}</domain:name>
+              </domain:info>
+            </info>
+            <clTRID>{{ clTRID }}</clTRID>
+          </command>
+        </epp>');
+                $r = $this->write($xml, __FUNCTION__);
+                $r = $r->response->resData->children('urn:ietf:params:xml:ns:domain-1.0')->infData;
+                $status = array();
+                foreach($r->status as $e) {
+                    $st = (string)$e->attributes()->s;
+                    $status[$st] = true;
+                }
+                if (!isset($status['hiddenInWhoIs'])) {
+                    $from = $to = array();
+                    $from[] = '/{{ name }}/';
+                    $to[] = htmlspecialchars($domain->getName());
+                    $from[] = '/{{ clTRID }}/';
+                    $clTRID = str_replace('.', '', round(microtime(1), 3));
+                    $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-update-' . $clTRID);
+                    $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8"?>
+        <epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
+           <command>
+              <update>
+                 <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
+                    <domain:name>{{ name }}</domain:name>
+                    <domain:add>
+                       <domain:status s="hiddenInWhoIs" lang="en" />
+                    </domain:add>
+                 </domain:update>
+              </update>
+              <clTRID>{{ clTRID }}</clTRID>
+           </command>
+        </epp>');
+                    $r = $this->write($xml, __FUNCTION__);
+                }
+            } else {
+                $from = $to = array();
+                $from[] = '/{{ name }}/';
+                $to[] = htmlspecialchars($domain->getName());
+                $from[] = '/{{ clTRID }}/';
+                $clTRID = str_replace('.', '', round(microtime(1), 3));
+                $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-info-' . $clTRID);
+                $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        <epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
+          <command>
+            <info>
+              <domain:info
+               xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
+               xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
+                <domain:name hosts="all">{{ name }}</domain:name>
+              </domain:info>
+            </info>
+            <clTRID>{{ clTRID }}</clTRID>
+          </command>
+        </epp>');
+                $r = $this->write($xml, __FUNCTION__);
+                $r = $r->response->resData->children('urn:ietf:params:xml:ns:domain-1.0')->infData;
+                $status = array();
+                foreach($r->status as $e) {
+                    $st = (string)$e->attributes()->s;
+                    $status[$st] = true;
+                }
+                if (isset($status['hiddenInWhoIs'])) {
+                    $from = $to = array();
+                    $from[] = '/{{ name }}/';
+                    $to[] = htmlspecialchars($domain->getName());
+                    $from[] = '/{{ clTRID }}/';
+                    $clTRID = str_replace('.', '', round(microtime(1), 3));
+                    $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-update-' . $clTRID);
+                    $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8"?>
+        <epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
+           <command>
+              <update>
+                 <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
+                    <domain:name>{{ name }}</domain:name>
+                    <domain:rem>
+                       <domain:status s="hiddenInWhoIs" lang="en" />
+                    </domain:rem>
+                 </domain:update>
+              </update>
+              <clTRID>{{ clTRID }}</clTRID>
+           </command>
+        </epp>');
+                    $r = $this->write($xml, __FUNCTION__);
+                }
+            }
         }
 
         catch(exception $e) {
             $return = array(
                 'error' => $e->getMessage()
             );
-			throw new exception($e->getMessage());
+            throw new exception($e->getMessage());
         }
 
         if (!empty($s)) {
@@ -812,72 +972,29 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
             $to[] = htmlspecialchars($domain->getName());
             $from[] = '/{{ clTRID }}/';
             $clTRID = str_replace('.', '', round(microtime(1), 3));
-            $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-info-' . $clTRID);
-            $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-    <epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
-      <command>
-        <info>
-          <domain:info
-           xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
-           xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
-            <domain:name hosts="all">{{ name }}</domain:name>
-          </domain:info>
-        </info>
-        <clTRID>{{ clTRID }}</clTRID>
-      </command>
-    </epp>');
+            $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-update-' . $clTRID);
+            $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
+   <command>
+      <update>
+         <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
+            <domain:name>{{ name }}</domain:name>
+            <domain:add>
+               <domain:status s="hiddenInWhoIs" lang="en" />
+            </domain:add>
+         </domain:update>
+      </update>
+      <clTRID>{{ clTRID }}</clTRID>
+   </command>
+</epp>');
             $r = $this->write($xml, __FUNCTION__);
-            $r = $r->response->resData->children('urn:ietf:params:xml:ns:domain-1.0')->infData;
-            $dcontact = array();
-            $dcontact['registrant'] = (string)$r->registrant;
-            foreach($r->contact as $e) {
-                $type = (string)$e->attributes()->type;
-                $dcontact[$type] = (string)$e;
-            }
-
-            $contact = array();
-            foreach($dcontact as $id) {
-                if (isset($contact[$id])) {
-                    continue;
-                }
-                $from = $to = array();
-                $from[] = '/{{ id }}/';
-                $to[] = htmlspecialchars($id);
-                $from[] = '/{{ flag }}/';
-                $to[] = 1;
-                $from[] = '/{{ clTRID }}/';
-                $clTRID = str_replace('.', '', round(microtime(1) , 3));
-                $to[] = htmlspecialchars($this->config['registrarprefix'] . '-contact-update-' . $clTRID);
-                $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-    <epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
-      <command>
-        <update>
-          <contact:update xmlns:contact="urn:ietf:params:xml:ns:contact-1.0" xsi:schemaLocation="urn:ietf:params:xml:ns:contact-1.0 contact-1.0.xsd">
-            <contact:id>{{ id }}</contact:id>
-            <contact:chg>
-              <contact:disclose flag="{{ flag }}">
-                <contact:voice/>
-                <contact:email/>
-              </contact:disclose>
-            </contact:chg>
-          </contact:update>
-        </update>
-        <clTRID>{{ clTRID }}</clTRID>
-      </command>
-    </epp>');
-                $r = $this->write($xml, __FUNCTION__);
-            }
         }
 
         catch(exception $e) {
             $return = array(
                 'error' => $e->getMessage()
             );
-			throw new exception($e->getMessage());
+            throw new exception($e->getMessage());
         }
 
         if (!empty($s)) {
@@ -899,72 +1016,29 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
             $to[] = htmlspecialchars($domain->getName());
             $from[] = '/{{ clTRID }}/';
             $clTRID = str_replace('.', '', round(microtime(1), 3));
-            $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-info-' . $clTRID);
-            $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-    <epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
-      <command>
-        <info>
-          <domain:info
-           xmlns:domain="urn:ietf:params:xml:ns:domain-1.0"
-           xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
-            <domain:name hosts="all">{{ name }}</domain:name>
-          </domain:info>
-        </info>
-        <clTRID>{{ clTRID }}</clTRID>
-      </command>
-    </epp>');
+            $to[] = htmlspecialchars($this->config['registrarprefix'] . '-domain-update-' . $clTRID);
+            $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
+   <command>
+      <update>
+         <domain:update xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xsi:schemaLocation="urn:ietf:params:xml:ns:domain-1.0 domain-1.0.xsd">
+            <domain:name>{{ name }}</domain:name>
+            <domain:rem>
+               <domain:status s="hiddenInWhoIs" lang="en" />
+            </domain:rem>
+         </domain:update>
+      </update>
+      <clTRID>{{ clTRID }}</clTRID>
+   </command>
+</epp>');
             $r = $this->write($xml, __FUNCTION__);
-            $r = $r->response->resData->children('urn:ietf:params:xml:ns:domain-1.0')->infData;
-            $dcontact = array();
-            $dcontact['registrant'] = (string)$r->registrant;
-            foreach($r->contact as $e) {
-                $type = (string)$e->attributes()->type;
-                $dcontact[$type] = (string)$e;
-            }
-
-            $contact = array();
-            foreach($dcontact as $id) {
-                if (isset($contact[$id])) {
-                    continue;
-                }
-                $from = $to = array();
-                $from[] = '/{{ id }}/';
-                $to[] = htmlspecialchars($id);
-                $from[] = '/{{ flag }}/';
-                $to[] = 0;
-                $from[] = '/{{ clTRID }}/';
-                $clTRID = str_replace('.', '', round(microtime(1) , 3));
-                $to[] = htmlspecialchars($this->config['registrarprefix'] . '-contact-update-' . $clTRID);
-                $xml = preg_replace($from, $to, '<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-    <epp xmlns="urn:ietf:params:xml:ns:epp-1.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="urn:ietf:params:xml:ns:epp-1.0 epp-1.0.xsd">
-      <command>
-        <update>
-          <contact:update xmlns:contact="urn:ietf:params:xml:ns:contact-1.0" xsi:schemaLocation="urn:ietf:params:xml:ns:contact-1.0 contact-1.0.xsd">
-            <contact:id>{{ id }}</contact:id>
-            <contact:chg>
-              <contact:disclose flag="{{ flag }}">
-                <contact:voice/>
-                <contact:email/>
-              </contact:disclose>
-            </contact:chg>
-          </contact:update>
-        </update>
-        <clTRID>{{ clTRID }}</clTRID>
-      </command>
-    </epp>');
-                $r = $this->write($xml, __FUNCTION__);
-            }
         }
 
         catch(exception $e) {
             $return = array(
                 'error' => $e->getMessage()
             );
-			throw new exception($e->getMessage());
+            throw new exception($e->getMessage());
         }
 
         if (!empty($s)) {
@@ -1113,7 +1187,7 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
             $return = array(
                 'error' => $e->getMessage()
             );
-			throw new exception($e->getMessage());
+            throw new exception($e->getMessage());
         }
 
         if (!empty($s)) {
@@ -1211,7 +1285,7 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
             $return = array(
                 'error' => $e->getMessage()
             );
-			throw new exception($e->getMessage());
+            throw new exception($e->getMessage());
         }
 
         if (!empty($s)) {
