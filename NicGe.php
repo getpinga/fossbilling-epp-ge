@@ -1142,7 +1142,6 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
 
             $add = array();
             foreach(array(
-                'clientUpdateProhibited',
                 'clientDeleteProhibited',
                 'clientTransferProhibited'
             ) as $st) {
@@ -1156,6 +1155,7 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
                 foreach($add as $st) {
                     $text.= '<domain:status s="' . $st . '" lang="en"></domain:status>' . "\n";
                 }
+                $from = $to = array();
                 $from[] = '/{{ add }}/';
                 $to[] = (empty($text) ? '' : "<domain:add>\n{$text}</domain:add>\n");
                 $from[] = '/{{ name }}/';
@@ -1240,7 +1240,6 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
 
             $rem = array();
             foreach(array(
-                'clientUpdateProhibited',
                 'clientDeleteProhibited',
                 'clientTransferProhibited'
             ) as $st) {
@@ -1254,6 +1253,7 @@ class Registrar_Adapter_NicGE extends Registrar_AdapterAbstract
                 foreach($rem as $st) {
                     $text.= '<domain:status s="' . $st . '" lang="en"></domain:status>' . "\n";
                 }
+                $from = $to = array();
                 $from[] = '/{{ rem }}/';
                 $to[] = (empty($text) ? '' : "<domain:rem>\n{$text}</domain:rem>\n");
                 $from[] = '/{{ name }}/';
